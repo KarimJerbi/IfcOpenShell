@@ -14,6 +14,49 @@ namespace {
 	}
 }
 
+std::pair<taxonomy::loop::ptr, taxonomy::loop::ptr> loop_intersection(taxonomy::loop::ptr loop1, taxonomy::loop::ptr loop2) {
+	 taxonomy::loop::ptr l1 = taxonomy::make<taxonomy::loop>();
+    taxonomy::loop::ptr l2 = taxonomy::make<taxonomy::loop>();
+
+	 bool swapped = (loop1->children.size() > loop2->children.size());
+	   if (swapped) {
+			std::swap(loop1, loop2);
+       }
+
+	 l1->closed = loop1->closed;
+	 l2->closed = loop2->closed;
+
+	 auto iter = loop2->children.begin();
+     for (auto& e : loop1->children) {
+         iter = std::find_if(iter, loop2->children.end(), [&e](auto& e1) { return boost::get<taxonomy::point3::ptr>(e->start)->tag == boost::get<taxonomy::point3::ptr>(e1->start)->tag; });
+         if (iter == loop2->children.end()) {
+             Logger::Warning("Could not match start tag");
+             return {loop1, loop2};
+         }
+         if (boost::get<taxonomy::point3::ptr>(e->end)->tag == boost::get<taxonomy::point3::ptr>((*iter)->end)->tag) {
+             l1->children.push_back(e);
+             l2->children.push_back(*iter);
+             iter++;
+			} else {
+             iter = std::find_if(iter, loop2->children.end(), [&e](auto& e1) { return boost::get<taxonomy::point3::ptr>(e->end)->tag == boost::get<taxonomy::point3::ptr>(e1->end)->tag; });
+                if (iter == loop2->children.end()) {
+                 Logger::Warning("Could not match end tag");
+                    return {loop1, loop2};
+                }
+
+				l1->children.push_back(taxonomy::make<taxonomy::edge>(boost::get<taxonomy::point3::ptr>(e->start), boost::get<taxonomy::point3::ptr>(e->end)));
+            l2->children.push_back(taxonomy::make<taxonomy::edge>(boost::get<taxonomy::point3::ptr>(e->start), boost::get<taxonomy::point3::ptr>((*iter)->end)));
+         }
+
+     }
+
+	  if (swapped) {
+         std::swap(l1, l2);
+     }
+
+     return {l1, l2};
+}
+
 taxonomy::loft::ptr ifcopenshell::geometry::make_loft(const Settings& settings_, const IfcUtil::IfcBaseClass* inst, const taxonomy::function_item::ptr& fn, std::vector<cross_section>& cross_sections)
 {
 	std::sort(cross_sections.begin(), cross_sections.end());
@@ -143,11 +186,13 @@ taxonomy::loft::ptr ifcopenshell::geometry::make_loft(const Settings& settings_,
                     } else if (rotation_a != rotation_b) {
 						Logger::Error("Direction vectors on cross section placements only supported when used consistently");
 					}
-					taxonomy::loop::ptr w1, w2;
+					taxonomy::loop::ptr w1_, w2_;
 					taxonomy::edge::ptr e1, e2;
 					for (auto tmp_ : boost::combine(loops_a, loops_b)) {
-						boost::tie(w1, w2) = tmp_;
-						if (w1->children.size() != w2->children.size()) {
+						boost::tie(w1_, w2_) = tmp_;
+                  taxonomy::loop::ptr w1, w2;
+                  std::tie(w1, w2) = loop_intersection(w1_, w2_);
+                  if (w1->children.size() != w2->children.size()) {
 							Logger::Warning("Mismatching number of edges: " +
 								std::to_string(w1->children.size()) + " vs " +
 								std::to_string(w2->children.size()),

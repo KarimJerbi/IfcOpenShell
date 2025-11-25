@@ -640,6 +640,8 @@ typedef item const* ptr;
 			struct IFC_GEOM_API point3 : public cartesian_base<3> {
 				DECLARE_PTR(point3)
 
+				boost::optional<std::string> tag;
+
 				virtual point3* clone_() const { return new point3(*this); }
 				virtual kinds kind() const { return POINT3; }
 
@@ -651,8 +653,8 @@ typedef item const* ptr;
 				void print(std::ostream& o, int indent = 0) const;
 
 				point3() : cartesian_base() {}
-				point3(const Eigen::Vector3d& c) : cartesian_base(c) {}
-				point3(double x, double y, double z = 0.) : cartesian_base(x, y, z) {}
+				point3(const Eigen::Vector3d& c,boost::optional<std::string> tag = boost::none) : tag(tag), cartesian_base(c) {}
+                point3(double x, double y, double z = 0., boost::optional<std::string> tag = boost::none) : tag(tag), cartesian_base(x, y, z) {}
 			};
 
 			struct IFC_GEOM_API direction3 : public cartesian_base<3> {

@@ -87,7 +87,7 @@ camera is viewing from the positive or negative side of each axis.
 """
 
 __all__ = [
-    "GizmoColor",
+               "GizmoColor",
     "GizmoAxis",
     "TextAlignment",
     "CoordinateSpace",

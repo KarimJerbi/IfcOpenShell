@@ -202,7 +202,7 @@ def get_similar_openings(
 ) -> list[ifcopenshell.entity_instance]:
     model = ifc.get()
     all_openings = model.by_type("IfcOpeningElement")
-    similar_openings = [o for o in all_openings if o.ObjectPlacement == opening.ObjectPlacement and o != opening]
+    similar_openings = [o for o in all_openings if (o.ObjectPlacement == opening.ObjectPlacement or o.Representation == opening.Representation) and o != opening]
     return similar_openings
 
 
@@ -223,9 +223,12 @@ def edit_similar_opening_placement(
     if not opening or not similar_openings:
         return
     for similar_opening in similar_openings:
-        old_placement = similar_opening.ObjectPlacement
-        similar_opening.ObjectPlacement = opening.ObjectPlacement
-        geometry.delete_opening_object_placement(old_placement)
+        # Only update ObjectPlacement if they share the same ObjectPlacement (not cloned)
+        # Cloned openings share Representation but have different ObjectPlacement
+        if similar_opening.ObjectPlacement == opening.ObjectPlacement:
+            old_placement = similar_opening.ObjectPlacement
+            similar_opening.ObjectPlacement = opening.ObjectPlacement
+            geometry.delete_opening_object_placement(old_placement)
 
 
 class IncompatibleRepresentationError(Exception):

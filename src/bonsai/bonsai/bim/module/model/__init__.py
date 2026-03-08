@@ -85,6 +85,7 @@ classes = (
     wall.UnjoinWalls,
     opening.AddBoolean,
     opening.CloneOpening,
+    opening.ShareOpening,
     opening.EditOpenings,
     opening.FlipFill,
     opening.HideAllOpenings,
